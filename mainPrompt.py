@@ -1,7 +1,12 @@
-from fileCheck import vertify_file
-
+from fileCheck import verify_files
+from test_ledger import handle_query_and_display
+from test_ledger import handle_edit
+from expense_income import expenditure
+from expense_income import income
 #주 프롬프트 :
 SEPERATOR = '--------------------------------------------------------------'
+SEPERATOR2 = '=============================================================='
+
 
 def print_mainPrompt():
     print('=주 프롬프트=\n')
@@ -10,34 +15,37 @@ def print_mainPrompt():
     print(SEPERATOR)
     return choice
 
-def callFunc(c):
+def callFunc(c, user_id):
     if(c == '지출'):
-        print('지출함수')
-        #지출 함수
+        expenditure(user_id)
+        if(not verify_files()) : return -1
     elif(c == '수입'):
-        print('수입함수')
-        #수입 함수
+        income(user_id)
+        if(not verify_files()) : return -1
     elif(c == '조회'):
-        print('조회함수')
-        #조회 함수
+        print(handle_query_and_display(user_id))
     elif(c == '편집'):
-        print('편집함수')
-        #편집 함수
+        handle_edit(user_id)
+        if(not verify_files()) : return -1
     elif(c == '저장'):
-        print('저장함수')
-        #저장 함수
-        while(vertify_file()) : pass
+        print("저장하는 중...")
+        print(SEPERATOR)
+        if(verify_files()):
+            print("성공적으로 저장되었습니다.\n주프롬프트로 돌아갑니다.")
+            print(SEPERATOR2)
+        else :  return -1
     elif(c == '로그아웃'):
-        print('로그아웃함수')
         return -1
         #로그아웃 함수(메인메뉴로 돌아감)
     
 
-def mainPrompt():
+def mainPrompt(user_id):
     while(1):
         c = print_mainPrompt()
-        check = callFunc(c)
+        check = callFunc(c, user_id)
         if check == -1: 
             return -1     
 
 
+if __name__ == "__main__":
+    mainPrompt("matthew")
