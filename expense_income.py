@@ -20,7 +20,7 @@ meth1={'현금','cash','지폐','현'}
 meth2={'카드','card','credit','카'}
 meth3={'계좌이체','transfer','bank','account','송금','계'}
 
-def get_valid_date(date_str):
+def valid_date(date_str):
     """날짜 유효성 검사 및 반환 (5.2.1.1 ~ 5.2.1.4절)"""
     if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', date_str):
         print("날짜는 YYYY-MM-DD 형식으로 입력해야합니다.")
@@ -44,7 +44,7 @@ def dinput():
     while 1:
         date=input('날짜 입력(YYYY-MM-DD): ')
         print("------------------------------------------------------------")
-        if(get_valid_date(date)==1):
+        if(valid_date(date)==1):
             break
     return date
 
@@ -81,8 +81,8 @@ def ainput():
             print("금액은 정수로 입력해야 합니다.")
         elif(int(amount)<=0):
             print("금액은 양의 정수로 입력해야 합니다.")
-        ##elif(int(amount)>10000000):
-        ##    print(); ?????
+        elif(int(amount)>10000000):
+           print("금액은 10000000원 이하여야 합니다")
         else:
             break
     print("------------------------------------------------------------")
@@ -130,7 +130,6 @@ def hsave(user_id, date, type, amount, category, method):
             a.write(date+'\t'+type+'\t'+amount+'\t'+category+'\t'+method+"\n") #파일에 저장
             
             hh = [line for line in hh if line.strip()] #빈 줄 무시
-            print(hh)
 
             sum=0
             for line in hh:
@@ -154,7 +153,7 @@ def hsave(user_id, date, type, amount, category, method):
             print("입력을 취소합니다.")
             print("주 프롬프트로 돌아갑니다.")
             print("------------------------------------------------------------")
-            break
+            return
 
 
 def expenditure(user_id):

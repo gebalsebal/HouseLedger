@@ -23,7 +23,7 @@ def callFunc(c, user_id):
         income(user_id)
         if(not verify_files()) : return -1
     elif(c == '조회'):
-        print(handle_query_and_display(user_id))
+        handle_query_and_display(user_id)
     elif(c == '편집'):
         handle_edit(user_id)
         if(not verify_files()) : return -1

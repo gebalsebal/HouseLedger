@@ -2,6 +2,7 @@ import sys
 import os
 import datetime
 import re
+from pathlib import Path
 
 # --------------------------------------------------------------
 # 1. 전역 상수/변수 및 헬퍼 함수 (Validation Logic)
@@ -22,6 +23,7 @@ PAYMENT_MAP = {
     '카드': ['card', 'credit', '카'],
     '계좌이체': ['transfer', 'bank', 'account', '송금', '계'],
 }
+
 
 def get_valid_date(date_str, is_edit_mode=False):
     """날짜 유효성 검사 및 반환 (5.2.1.1 ~ 5.2.1.4절)"""
@@ -100,39 +102,89 @@ def get_valid_payment(payment_input):
     raise ValueError("올바른 결제수단을 입력해야 합니다.")
 
 # --------------------------------------------------------------
-# 2. 데이터 관리 함수 (I/O & Utilities - 가상 구현)
+# 2. 데이터 관리 함수 (I/O & Utilities)
 # --------------------------------------------------------------
 
-# 💡 가상의 데이터베이스 (실제 파일 I/O 대체)
-# 이 리스트는 handle_edit 등에서 원본 데이터로 사용됨.
-MOCK_LEDGER_DATA = [
-    {'idx': 1, '날짜': '2025-09-24', '유형': 'E', '금액': 5000, '카테고리': '식비', '결제수단': '계좌이체'},
-    {'idx': 2, '날짜': '2025-09-23', '유형': 'E', '금액': 10000, '카테고리': '교통', '결제수단': '현금'},
-    {'idx': 3, '날짜': '2025-09-22', '유형': 'I', '금액': 15000, '카테고리': '입금', '결제수단': '카드'},
-    {'idx': 4, '날짜': '2025-09-21', '유형': 'E', '금액': 3000, '카테고리': '여가', '결제수단': '카드'},
-]
 
 def load_user_ledger(user_id):
-    """사용자 가계부 파일을 읽어 리스트로 반환 (가상 구현)"""
-    # 원본 데이터를 복사하여 반환해야, 수정 시 원본에 직접적인 영향을 주지 않음.
-    data = sorted(MOCK_LEDGER_DATA.copy(), key=lambda x: x['날짜'], reverse=True)
-    # idx 재부여 (삭제 후 인덱스가 틀어지는 것을 시뮬레이션 방지)
-    for i, item in enumerate(data):
-        item['idx'] = i + 1 
-    return data
+    """
+    사용자의 가계부 파일(<ID>_HL.txt)을 읽어 리스트로 반환 (6.2절)
+    실제 파일 I/O 및 6.3절 문법 검사 로직이 필요함.
+    """
+    file_path = f"{user_id}_HL.txt"
+    data = []
+    
+    try:
+        # 파일이 없으면 빈 리스트 반환 (6.3.1.b절: 재시작 대신 빈 리스트)
+        if not os.path.exists(file_path):
+            print(f"!오류: 가계부 파일이 존재하지 않습니다. 새로운 파일 생성.")
+            with open(file_path, 'w', encoding='utf-8') as f:
+                pass
+            return data
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for i, line in enumerate(f, 1):
+                line = line.strip()
+                if not line: continue
+                
+                # 6.2.1절 문법 검사: <Date><탭문자><Type><탭문자><Amount>...
+                parts = line.split('\t')
+                if len(parts) != 5:
+                    print(f"!치명적오류: 현재 {file_path} {i}행에서 오류가 발생되었습니다.")
+                    print("프로그램을 종료시킵니다.")
+                    sys.exit()
+                
+                # 날짜, 유형, 금액, 카테고리, 결제수단
+                data.append({
+                    'idx': i, # 임시 인덱스 (삭제/수정 시 중요)
+                    '날짜': parts[0],
+                    '유형': parts[1],
+                    '금액': int(parts[2]),
+                    '카테고리': parts[3],
+                    '결제수단': parts[4],
+                })
+        
+        # 7.8절에 따라 날짜 역순으로 정렬 (가정)
+        return sorted(data, key=lambda x: x['날짜'], reverse=True)
+        
+    except Exception as e:
+        print(f"!치명적오류: {file_path} 파일을 읽는 중 오류가 발생했습니다: {e}")
+        print("프로그램을 종료시킵니다.")
+        sys.exit()
+
 
 def calculate_total_asset(data_list):
-    """가계부 내역 리스트를 기반으로 총 자산을 계산"""
-    total = sum(item['금액'] if item['유형'] == 'I' else -item['금액'] for item in data_list)
+    """가계부 내역 리스트를 기반으로 총 자산을 계산 (7.8, 7.9절)"""
+    total = 0
+    for item in data_list:
+        amount = item['금액']
+        if item['유형'] == 'I':
+            total += amount
+        elif item['유형'] == 'E':
+            total -= amount
     return total
 
+
 def save_ledger_data(user_id, data_list):
-    """변경된 가계부 내역을 파일에 저장하고 무결성 검사 (가상 구현)"""
-    # 실제 데이터베이스 MOCK_LEDGER_DATA를 업데이트
-    global MOCK_LEDGER_DATA
-    MOCK_LEDGER_DATA = data_list
-    print("성공적으로 저장되었습니다.")
-    return True
+    """
+    변경된 가계부 내역을 파일에 저장하고 무결성 검사 (7.10, 6.3절)
+    """
+    file_path = f"{user_id}_HL.txt"
+    try:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            for item in data_list:
+                # 6.2.1절 형식: <Date><탭문자><Type><탭문자><Amount><탭문자><Category><탭문자><Payment>
+                line = f"{item['날짜']}\t{item['유형']}\t{item['금액']}\t{item['카테고리']}\t{item['결제수단']}\n"
+                f.write(line)
+        
+        # (6.3절 파일 검사는 load_user_ledger를 호출하여 수행 가능하나, 중복을 막기 위해 생략)
+        # 이 시점에서 저장된 파일이 문법적으로 올바른지 다시 load_user_ledger를 통해 확인해야 함.
+        return True
+        
+    except Exception as e:
+        print(f"!치명적오류: {file_path} 파일을 저장하는 중 오류가 발생했습니다: {e}")
+        print("프로그램을 종료시킵니다.")
+        sys.exit()
 
 # --------------------------------------------------------------
 # 3. 조회 및 편집 기능 (Ledger Features)
@@ -160,8 +212,9 @@ def _filter_ledger_data(data_list, search_term):
             if item['날짜'].startswith(search_term):
                 filtered_data.append(item)
         return filtered_data
-    except ValueError:
-        pass
+    except ValueError as e:
+        return -1
+        print(f"오류 메시지: {e}")
 
     # 2. 카테고리 검색 판단 (표준명 또는 동의어 사용)
     standard_category = _get_standard_name(search_term, CATEGORY_MAP)
@@ -185,12 +238,17 @@ def _display_ledger_table(data_list, user_id):
     """조회 결과를 UI/UX에 맞게 표 형태로 출력 (7.8절)"""
     print("번호|     날짜      | 지출    | 수입     | 카테고리| 결제수단")
     print("--------------------------------------------------------------")
-
+    display_to_original_idx_map = []
+    #idxList = []
+    cnt = 1
+    
     for item in data_list:
         expense = f"{item['금액']:,}" if item['유형'] == 'E' else '-'
         income = f"{item['금액']:,}" if item['유형'] == 'I' else '-'
-        
-        print(f" {item['idx']:<3}| {item['날짜']:<13} |{expense:>8} | {income:>8} | {item['카테고리']:<6}| {item['결제수단']}")
+        #idxList.append(item['idx'])
+        display_to_original_idx_map.append(item['idx'])
+        print(f" {cnt:<3}| {item['날짜']:<13} |{expense:>8} | {income:>8} | {item['카테고리']:<6}| {item['결제수단']:<6}")
+        cnt += 1
     
     print("--------------------------------------------------------------")
     
@@ -198,7 +256,7 @@ def _display_ledger_table(data_list, user_id):
     print(f"현재 ID님의 총 자산은 ₩{total_asset:,}입니다.")
     print("-------------------------------------------------------------")
     
-    return True
+    return display_to_original_idx_map  
 
 # 💡 [조회 함수] handle_query_and_display
 def handle_query_and_display(user_id, mode = "query"):
@@ -206,9 +264,9 @@ def handle_query_and_display(user_id, mode = "query"):
     original_data_list = load_user_ledger(user_id) 
     
     if mode == "query":
-        print("메뉴를 입력하세요: 조회")
-        print("--------------------------------------------------------------")
-    
+        # print("메뉴를 입력하세요: 조회")
+        # print("--------------------------------------------------------------")
+        pass
     while True:
         print("\n[ 전체조회 ]   [ 검색조회 ]")
         menu = input("\n메뉴 입력: ").strip()
@@ -236,13 +294,13 @@ def handle_query_and_display(user_id, mode = "query"):
             
             filtered_data = _filter_ledger_data(original_data_list, search_term)
             
-            if filtered_data:
+            if filtered_data != -1 and filtered_data:
                 _display_ledger_table(filtered_data, user_id)
                 return filtered_data
-            else:
+            elif not filtered_data:
                 print("검색 결과가 없습니다.")
                 continue
-            
+                
         else:
             print("입력이 올바르지 않습니다.")
             continue
@@ -271,7 +329,9 @@ def handle_edit(user_id):
     if not data_for_display:
         print("조회할 내역이 없습니다. 주 프롬프트로 돌아갑니다.")
         return
-
+    
+    display_to_original_idx_map = _display_ledger_table(data_for_display, user_id)
+    
     print("===================================")
     while True:
         try:
@@ -281,8 +341,19 @@ def handle_edit(user_id):
                 print("입력이 올바르지 않습니다.")
                 continue
             
-            edit_idx = int(edit_idx_input)
-            selected_item = next((item for item in data_for_display if item['idx'] == edit_idx), None)
+            #idxLsit[linput]
+            #edit_idx = int(edit_idx_input)
+            display_num = int(edit_idx_input) 
+            map_index = display_num - 1
+
+            if 0 <= map_index < len(display_to_original_idx_map):
+                # 매핑 리스트에서 실제 레코드의 고유 인덱스(item['idx'])를 가져옵니다.
+                original_idx_to_edit = display_to_original_idx_map[map_index] 
+            else:
+                print("입력이 올바르지 않습니다. 표시된 번호 내에서 선택하세요.")
+                continue
+            
+            selected_item = next((item for item in data_for_display if item['idx'] == original_idx_to_edit), None)
 
             if selected_item is None:
                 print("입력이 올바르지 않습니다.")
@@ -293,9 +364,9 @@ def handle_edit(user_id):
             edit_action = input("\n원하는 기능을 입력하세요: ").strip()
             
             if edit_action == "수정":
-                if process_update(user_id, selected_item): return
+                return process_update(user_id, selected_item)
             elif edit_action == "삭제":
-                if process_delete(user_id, selected_item): return
+                return process_delete(user_id, selected_item)
             else:
                 print("입력이 올바르지 않습니다.")
                 continue

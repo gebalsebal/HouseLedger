@@ -102,7 +102,7 @@ def check_userfile(users):
 
         # 2. ID 규칙 검사
         if not user_id_regex.match(user_id):
-            print("id 오류")
+            print(user_id, "id 오류")
             return line_num
 
         # 3. Password 규칙 검사
