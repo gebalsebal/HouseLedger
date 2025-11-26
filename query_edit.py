@@ -27,7 +27,7 @@ PAYMENT_MAP = {
 
 def get_valid_date(date_str, is_edit_mode=False):
     """날짜 유효성 검사 및 반환 (5.2.1.1 ~ 5.2.1.4절)"""
-    
+
     if not date_str or date_str.isspace() or date_str.strip() != date_str:
         raise ValueError("날짜는 YYYY-MM-DD 형식으로 입력해야합니다.")
 
@@ -50,6 +50,7 @@ def get_valid_date(date_str, is_edit_mode=False):
 
 def get_valid_date_or_month(date_input):
     """5.3.1절: YYYY-MM-DD 또는 YYYY-MM 형식 검사"""
+    
     date_input = date_input.strip()
     if re.fullmatch(r'\d{4}-\d{2}-\d{2}', date_input):
         return date_input
