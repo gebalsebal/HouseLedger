@@ -27,10 +27,13 @@ PAYMENT_MAP = {
 
 def get_valid_date(date_str, is_edit_mode=False):
     """날짜 유효성 검사 및 반환 (5.2.1.1 ~ 5.2.1.4절)"""
+<<<<<<< HEAD
     
     if not date_str or date_str.isspace() or date_str.strip() != date_str:
         raise ValueError("날짜는 YYYY-MM-DD 형식으로 입력해야합니다.")
 
+=======
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
     if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', date_str):
         raise ValueError("날짜는 YYYY-MM-DD 형식으로 입력해야합니다.")
 
@@ -39,8 +42,12 @@ def get_valid_date(date_str, is_edit_mode=False):
         date_obj = datetime.date(y, m, d)
     except ValueError:
         raise ValueError("날짜는 YYYY-MM-DD 형식으로 입력해야합니다.")
+<<<<<<< HEAD
     if not (1900 <= y <= 2099):
         raise ValueError("날짜는 YYYY-MM-DD 형식으로 입력해야합니다.")
+=======
+
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
     if is_edit_mode and date_obj > datetime.date.today():
         raise ValueError("오늘 이후의 날짜는 입력할 수 없습니다.")
     
@@ -59,6 +66,7 @@ def get_valid_date_or_month(date_input):
 
 def get_valid_amount(amount_str):
     """금액 유효성 검사 및 정수 반환 (5.2.3.1 ~ 5.2.3.4절)"""
+<<<<<<< HEAD
     
     if not amount_str or amount_str.isspace() or amount_str.strip() != amount_str:
         raise ValueError("금액은 정수로 입력해야 합니다.")
@@ -70,21 +78,38 @@ def get_valid_amount(amount_str):
     except ValueError:
         raise ValueError("금액은 정수로 입력해야 합니다.")
     
+=======
+    amount_str = amount_str.strip()
+    if not amount_str.isdigit():
+        raise ValueError("금액은 정수로 입력해야 합니다.")
+    
+    amount = int(amount_str)
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
     
     if amount <= 0:
         raise ValueError("금액은 양의 정수로 입력해야 합니다.")
     
+<<<<<<< HEAD
     if amount_str != str(amount) :
         raise ValueError("금액은 정수로 입력해야 합니다.")
         
     if amount > 999999999 or len(amount_str) > 9: 
         raise ValueError("금액은 999,999,999 이하의 값만 허용됩니다.")
+=======
+    # 선행 0 검사 (5.2.3.1) 및 9자리 제한
+    if amount_str != str(amount) or len(amount_str) > 9:
+        raise ValueError("금액은 정수로 입력해야 합니다.")
+        
+    if amount > 10000000: # 5.2.3.2
+        raise ValueError("금액은 10,000,000 이하의 값만 허용됩니다.")
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
         
     return amount
 
 
 def get_valid_category(category_input, type_str):
     """카테고리 유효성 검사 및 표준명 반환 (5.2.4.1 ~ 5.2.4.4절)"""
+<<<<<<< HEAD
     
     if not category_input or category_input.isspace():
         raise ValueError("올바른 카테고리를 입력해야 합니다.")
@@ -96,6 +121,8 @@ def get_valid_category(category_input, type_str):
         raise ValueError("올바른 카테고리를 입력해야 합니다.")
     
     
+=======
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
     if type_str == 'I':
         return '입금'
         
@@ -113,6 +140,7 @@ def get_valid_category(category_input, type_str):
 
 def get_valid_payment(payment_input):
     """결제수단 유효성 검사 및 표준명 반환 (5.2.5.1 ~ 5.2.5.4절)"""
+<<<<<<< HEAD
     
     if not payment_input or payment_input.isspace():
         raise ValueError("올바른 결제수단을 입력해야 합니다.")
@@ -124,6 +152,8 @@ def get_valid_payment(payment_input):
         raise ValueError("올바른 결제수단을 입력해야 합니다.")
     
     
+=======
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
     input_stripped = payment_input.strip()
     input_lower = input_stripped.lower()
     
@@ -304,8 +334,11 @@ def handle_query_and_display(user_id, mode = "query"):
     original_data_list = load_user_ledger(user_id) 
     
     if mode == "query":
+<<<<<<< HEAD
         # print("메뉴를 입력하세요: 조회")
         # print("--------------------------------------------------------------")
+=======
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
         pass
     while True:
         print("\n[ 전체조회 ]   [ 검색조회 ]")
@@ -366,9 +399,12 @@ def _format_item_for_display(item):
 def handle_edit(user_id):
     """가계부 편집 기능의 전체 흐름을 담당 (7.9절)"""
     
+<<<<<<< HEAD
     print("메뉴를 입력하세요: 편집")
     print("--------------------------------------------------------------")
     
+=======
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
     data_for_display = handle_query_and_display(user_id, mode="edit")
     
     if not data_for_display:
@@ -433,7 +469,11 @@ def process_update(user_id, target_item):
     
     # 날짜 입력 및 유효성 검사
     while True:
+<<<<<<< HEAD
         new_date = input("날짜 입력(YYYY-MM-DD): ") #strip 제거하여 공백 검사
+=======
+        new_date = input("날짜 입력(YYYY-MM-DD): ").strip()
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
         if not new_date:
             break
         try:
@@ -448,7 +488,11 @@ def process_update(user_id, target_item):
     print("카테고리")
     print("      [식비] [교통] [주거] [여가] [기타] [입금]")
     while True:
+<<<<<<< HEAD
         new_category = input("카테고리 입력: ")
+=======
+        new_category = input("카테고리 입력: ").strip()
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
         if not new_category:
             break
         try:
@@ -460,7 +504,11 @@ def process_update(user_id, target_item):
     print("--------------------------------------------------------------")
     # 금액 입력 및 유효성 검사
     while True:
+<<<<<<< HEAD
         new_amount = input("금액 입력: ")
+=======
+        new_amount = input("금액 입력: ").strip()
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
         if not new_amount:
             break
         try:
@@ -474,7 +522,11 @@ def process_update(user_id, target_item):
     print("결제수단")
     print("      [카드] [현금] [계좌이체]")
     while True:
+<<<<<<< HEAD
         new_payment = input("결제수단 입력: ")
+=======
+        new_payment = input("결제수단 입력: ").strip()
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
         if not new_payment:
             break
         try:
@@ -536,4 +588,35 @@ def process_delete(user_id, target_item):
 # 4. 테스트 메인 실행 루프
 # --------------------------------------------------------------
 
+<<<<<<< HEAD
+=======
+TEST_USER_ID = "testuser"
+
+def run_test_menu():
+    print("===================================")
+    print("  가계부 조회/편집 기능 테스트 시작")
+    print("===================================")
+    
+    while True:
+        print("\n[ 주 프롬프트 (가정) ]")
+        menu = input("[ 조회 ] [ 편집 ] [ 종료 ]\n메뉴 입력: ").strip().lower()
+        
+        if menu == "조회":
+            # 일반 조회 실행
+            handle_query_and_display(TEST_USER_ID, mode="query")
+            
+        elif menu == "편집":
+            # 편집 실행
+            handle_edit(TEST_USER_ID)
+            
+        elif menu == "종료":
+            print("테스트 프로그램을 종료합니다.")
+            break
+            
+        else:
+            print("입력이 올바르지 않습니다.")
+
+if __name__ == "__main__":
+    run_test_menu()
+>>>>>>> bd1b8d85c8e127b6733823554dff88a02c65ba73
 
