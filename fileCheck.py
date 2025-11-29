@@ -4,7 +4,7 @@ import re
 import datetime
 from pathlib import Path
 # 🥠2차: category 모듈 import
-from category import SETTING_FILE_SUFFIX
+from category import SETTING_FILE_SUFFIX, get_payment_map
 
 # --- 설정 변수 ---
 # 홈 경로 설정
@@ -13,20 +13,21 @@ HOME_DIR = Path.cwd()
 USER_INFO_FILE = "user_info.txt"
 # 가계부 파일 접미사
 LEDGER_FILE_SUFFIX = "_HL.txt"
-"""CATEGORY_MAP = {
-    '식비': ['음식', '밥', 'food', '식'],
-    '교통': ['차', '지하철', 'transport', 'transportation', '교'],
-    '주거': ['월세', '관리비', 'housing', 'house', 'rent', '주'],
-    '여가': ['취미', '문화생활', 'hobby', 'leisure', '여'],
-    '입금': ['월급', '용돈', 'salary', 'wage', 'income', '입'],
-    '기타': ['etc', 'other', '기'],
-} """
+#CATEGORY_MAP = {
+#    '식비': ['음식', '밥', 'food', '식'],
+#    '교통': ['차', '지하철', 'transport', 'transportation', '교'],
+#    '주거': ['월세', '관리비', 'housing', 'house', 'rent', '주'],
+#    '여가': ['취미', '문화생활', 'hobby', 'leisure', '여'],
+#    '입금': ['월급', '용돈', 'salary', 'wage', 'income', '입'],
+#    '기타': ['etc', 'other', '기'],
+#}
 
-PAYMENT_MAP = {
-    '현금': ['cash', '지폐', '현'],
-    '카드': ['card', 'credit', '카'],
-    '계좌이체': ['transfer', 'bank', 'account', '송금', '계'],
-}
+#PAYMENT_MAP = {
+#    '현금': ['cash', '지폐', '현'],
+#    '카드': ['card', 'credit', '카'],
+#    '계좌이체': ['transfer', 'bank', 'account', '송금', '계'],
+#}
+
 SEPERATOR2 = '=============================================================='
 
 def check_valid_category(category_input):
@@ -46,9 +47,9 @@ def check_valid_payment(payment_input):
 
     if not payment_input: # 빈 문자열은 항상 False
         return False
+    payment_map = get_payment_map()
     
-    
-    for standard_name, synonyms in PAYMENT_MAP.items():
+    for standard_name, synonyms in payment_map.items():
         # 표준명 검사
         if standard_name == payment_input:
             return True

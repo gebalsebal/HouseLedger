@@ -18,6 +18,12 @@ DEFAULT_CATEGORIES = {
     '기타': {'separator': 'C6', 'synonyms': ['etc', 'other', '기']},
 }
 
+PAYMENT_MAP = {
+    '현금': {'synonyms': ['cash', '지폐', '현']},
+    '카드': {'synonyms': ['card', 'credit', '카']},
+    '계좌이체': {'synonyms': ['transfer', 'bank', 'account', '송금', '계']},
+}
+
 # 카테고리 맵 관리 및 파일 I/O 함수
 
 def create_default_settings(user_id):
@@ -95,6 +101,13 @@ def get_category_map():
     """
     global USER_CATEGORY_MAP
     return USER_CATEGORY_MAP
+
+def get_payment_map():
+    """
+    현재 메모리에 로드된 PAYMENT_MAP의 참조 반환.
+    """
+    global PAYMENT_MAP
+    return PAYMENT_MAP
 
 
 def save_user_settings(user_id, map_data):
