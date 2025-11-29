@@ -27,7 +27,7 @@ PAYMENT_MAP = {
 
 def get_valid_date(date_str, is_edit_mode=False):
     """날짜 유효성 검사 및 반환 (5.2.1.1 ~ 5.2.1.4절)"""
-
+    
     if not date_str or date_str.isspace() or date_str.strip() != date_str:
         raise ValueError("날짜는 YYYY-MM-DD 형식으로 입력해야합니다.")
 
@@ -85,7 +85,7 @@ def get_valid_amount(amount_str):
     return amount
 
 
-def get_valid_category(category_input, type_str):
+def get_valid_category(category_input):
     """카테고리 유효성 검사 및 표준명 반환 (5.2.4.1 ~ 5.2.4.4절)"""
     
     if not category_input or category_input.isspace():
@@ -97,14 +97,14 @@ def get_valid_category(category_input, type_str):
     if ' ' in category_input:
         raise ValueError("올바른 카테고리를 입력해야 합니다.")
 
-    if type_str == 'I':
-        return '입금'
+    #if type_str == 'I'
+    #    return '입금'
         
     input_stripped = category_input.strip()
     input_lower = input_stripped.lower()
     
     for standard_name, synonyms in CATEGORY_MAP.items():
-        if standard_name == '입금': continue
+        #if standard_name == '입금': continue
         
         if standard_name.lower() == input_lower or input_lower in [s.lower() for s in synonyms]:
             return standard_name
@@ -456,7 +456,14 @@ def process_update(user_id, target_item):
         if not new_category:
             break
         try:
-            current_item['카테고리'] = get_valid_category(new_category, current_item['유형'])
+            standard_category = get_valid_category(new_category) # 💡 [수정] type_str 인자 제거
+            
+            # 💡 [수정] 카테고리에 따라 유형(Type)을 자동으로 업데이트
+            if standard_category == '입금':
+                current_item['유형'] = 'I'
+            else:
+                current_item['유형'] = 'E'
+            current_item['카테고리'] = standard_category
             break
         except ValueError as e:
             print(f"오류 메시지: {e}")
