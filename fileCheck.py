@@ -3,6 +3,8 @@ import sys
 import re
 import datetime
 from pathlib import Path
+# 🥠2차: category 모듈 import
+from category import SETTING_FILE_SUFFIX
 
 # --- 설정 변수 ---
 # 홈 경로 설정
@@ -11,14 +13,14 @@ HOME_DIR = Path.cwd()
 USER_INFO_FILE = "user_info.txt"
 # 가계부 파일 접미사
 LEDGER_FILE_SUFFIX = "_HL.txt"
-CATEGORY_MAP = {
+"""CATEGORY_MAP = {
     '식비': ['음식', '밥', 'food', '식'],
     '교통': ['차', '지하철', 'transport', 'transportation', '교'],
     '주거': ['월세', '관리비', 'housing', 'house', 'rent', '주'],
     '여가': ['취미', '문화생활', 'hobby', 'leisure', '여'],
     '입금': ['월급', '용돈', 'salary', 'wage', 'income', '입'],
     '기타': ['etc', 'other', '기'],
-}
+} """
 
 PAYMENT_MAP = {
     '현금': ['cash', '지폐', '현'],
@@ -27,39 +29,18 @@ PAYMENT_MAP = {
 }
 SEPERATOR2 = '=============================================================='
 
-def check_valid_category(category_input, type_str):
-    if not category_input: # 빈 문자열은 항상 False
+def check_valid_category(category_input):
+    # 🥠HL.txt에 기록된 카테고리(구분자)가 유효한 형식인지 검사.
+    # 기존의 하드코딩된 CATEGORY_MAP을 사용X, 구분자 형식만 체크"""
+    
+    if not category_input:
         return False
-   
-    if type_str == 'I':
-        # 'I' (수입)인 경우, '입금' 카테고리만 검사
-        standard_name = '입금'
-        synonyms = CATEGORY_MAP.get(standard_name, []) 
         
-        if standard_name == category_input:
-            return True
-        for s in synonyms:
-            if s == category_input:
-                return True
-        # '입금' 및 동의어에 해당하지 않으면 False
-        return False
+    # 🥠C1, C12 같은 형식인지 체크
+    if re.fullmatch(r'C[1-9][0-9]*', category_input):
+        return True
     
-    elif type_str == 'E':
-        # 'E' (지출)인 경우, '입금'을 *제외한* 모든 카테고리 검사
-        for standard_name, synonyms in CATEGORY_MAP.items():
-            if standard_name == '입금':
-                continue # 지출 검사 시 '입금'은 건너뜀
-            
-            if standard_name == category_input:
-                return True
-            for s in synonyms:
-                if s == category_input:
-                    return True
-        # '입금' 외 다른 카테고리 및 동의어에 해당하지 않으면 False
-        return False
-    
-    # type_str이 'I'나 'E'가 아닌 경우
-    return False
+    return False 
 
 def check_valid_payment(payment_input):
 
@@ -116,10 +97,8 @@ def check_ledgerfile(ledgers):
     type_regex = re.compile(r'^(E|I)$')
     
     # 3. Amount Regex
-    #    - 1~9,999,999 (1~7자리, 0으로 시작 안 함)
-    #    - 또는 10,000,000 (정확히 1천만)
-    #    - ^([1-9][0-9]{0,6}|10000000)$
-    amount_regex = re.compile(r'^([1-9][0-9]{0,6}|10000000)$')
+    #    - 1~999,999,999 (1~9자리, 0으로 시작 안 함) / 1차 수정
+    amount_regex = re.compile(r'^([1-9][0-9]{0,8})$')
 
     for line_num, line in enumerate(ledgers, 1):
         
@@ -155,7 +134,7 @@ def check_ledgerfile(ledgers):
             return line_num
 
         # 5. Category 검사 (외부 함수)
-        if not check_valid_category(category_str, type_str):
+        if not check_valid_category(category_str):
             return line_num
 
         # 6. Payment 검사 (외부 함수)
@@ -163,6 +142,51 @@ def check_ledgerfile(ledgers):
             return line_num
 
     # 모든 라인이 유효
+    return None
+
+# 🥠2차: check_setting_file 함수 구현 (설정 파일 문법/의미 규칙 검사)
+def check_setting_file(settings_lines):
+    
+    category_set = set() # 표준명과 동의어 중복 검사
+    is_category_section = True 
+    found_separator = False 
+    
+    for i, line in enumerate(settings_lines, 1):
+        line = line.strip()
+        
+        if not line:
+            if is_category_section:
+                is_category_section = False # 첫 번째 빈 줄 발견 (섹션 구분 시작)
+                found_separator = True
+            continue
+        
+        if is_category_section:
+            # 1. 카테고리 형식 검사 (<구분자>\t<표준명>\t<동의어>...)
+            parts = line.split('\t')
+            if len(parts) < 2:
+                return i 
+            
+            separator = parts[0]
+            standard_name = parts[1].strip()
+            synonyms = [p.strip() for p in parts[2:] if p.strip()] 
+
+            # 2. 구분자 위치 및 형식 검사
+            if separator != parts[0]: # <Category구분자> 앞 공백 검사
+                 return i
+            if not re.fullmatch(r'C[1-9][0-9]*', separator): # C1, C2 등 형식
+                return i 
+            
+            # 3. 표준명/동의어 중복 검사 (의미 규칙)
+            if standard_name in category_set or any(s in category_set for s in synonyms):
+                return i 
+            
+            category_set.add(standard_name)
+            for s in synonyms:
+                category_set.add(s)
+
+         #elif found_separator:
+            # 4. 예산 섹션 검사 
+            
     return None
 
 
@@ -209,9 +233,11 @@ def verify_files():
 
 
     missing_ledger_files_exist = False
+    missing_setting_files_exist = False 
     for line in users:
         parts = line.split('\t')     
         user_id = parts[0]
+        
         ledger_file_name = f"{user_id}{LEDGER_FILE_SUFFIX}"
         ledger_file_path = HOME_DIR / ledger_file_name
         if not ledger_file_path.exists():
@@ -221,8 +247,19 @@ def verify_files():
                 missing_ledger_files_exist = True
             # 해당 사용자의 가계부 파일 생성
             with open(ledger_file_path, 'w', encoding='utf-8'): pass
+        
+        # 🥠사용자 설정 파일 검사
+        setting_file_name = f"{user_id}{SETTING_FILE_SUFFIX}"
+        setting_file_path = HOME_DIR / setting_file_name
+        if not setting_file_path.exists():
+            if not missing_setting_files_exist:
+                print("!오류: 설정 파일이 존재하지 않습니다.")
+                print("!오류: 프로그램이 자동으로 새로운 파일을 생성 중 입니다.")
+                missing_setting_files_exist = True
+            # 파일이 없으면 빈 설정 파일 생성
+            with open(setting_file_path, 'w', encoding='utf-8'): pass 
     
-    if missing_ledger_files_exist:
+    if missing_ledger_files_exist or missing_setting_files_exist:
         print("프로그램이 재시작됩니다.")
         print(SEPERATOR2)
         # 재시작을 위해 False 반환
@@ -252,5 +289,27 @@ def verify_files():
             print(f"!치명적오류: 현재 {ledger_file_name} {lineNum}행에서 오류가 발생되었습니다.")
             print("프로그램을 종료시킵니다.")
             sys.exit()
+            
+        # 🥠사용자 설정 파일 문법 검사 (치명적 오류)
+        setting_file_name = f"{user_id}{SETTING_FILE_SUFFIX}"
+        setting_file_path = HOME_DIR / setting_file_name
+        
+        if setting_file_path.stat().st_size == 0:
+            continue
+        
+        try:
+            with open(setting_file_path, 'r', encoding='utf-8') as f:
+                settings_lines = f.readlines()
+        except Exception as e:
+            print(f"!치명적오류: {setting_file_name} 파일을 읽는 중 오류가 발생했습니다: {e}")
+            print("프로그램을 종료시킵니다.")
+            sys.exit()
+        lineNum = check_setting_file(settings_lines)
+        if lineNum is not None:
+            # 치명적 오류 메시지 출력 후 종료
+            print(f"!치명적오류: 현재 {setting_file_name} {lineNum}행에서 오류가 발생되었습니다.")
+            print("프로그램을 종료시킵니다.")
+            sys.exit()
+            
     # 모든 검사를 통과하면 True 반환
     return True

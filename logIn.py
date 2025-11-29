@@ -2,8 +2,11 @@ import sys
 import os
 import re
 from mainPrompt import mainPrompt
+# 🥠2차: category 모듈 import
+from category import create_default_settings, load_user_categories
 
 USER_INFO_FILE = "user_info.txt"
+SETTING_FILE_SUFFIX = "_setting.txt" # 🥠2차: setting 파일
 SEPERATOR2 = '=============================================================='
 
 ##회원가입 파트
@@ -100,8 +103,12 @@ def signup():
     # 개인 장부 파일 생성
     ledger_filename = f"{user_id}_HL.txt"
     open(ledger_filename, "a", encoding="utf-8").close()
+    
+    # 🥠2차: setting 파일 생성
+    settings_success = create_default_settings(user_id)
+    settings_filename = f"{user_id}{SETTING_FILE_SUFFIX}"
 
-    print(f"회원가입이 완료되었습니다. 장부 파일 '{ledger_filename}'이 생성되었습니다.")
+    print(f"회원가입이 완료되었습니다. 장부 파일 '{ledger_filename}' 및 설정 파일 '{settings_filename}'이 생성되었습니다.")
     print("----------------------------------------------\n")
 
 if __name__ == "__main__":
