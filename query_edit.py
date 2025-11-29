@@ -28,6 +28,7 @@ PAYMENT_MAP = {
 def get_valid_date(date_str, is_edit_mode=False):
     """날짜 유효성 검사 및 반환 (5.2.1.1 ~ 5.2.1.4절)"""
     
+    # 공백 검사(1차 수정)
     if not date_str or date_str.isspace() or date_str.strip() != date_str:
         raise ValueError("날짜는 YYYY-MM-DD 형식으로 입력해야합니다.")
 
@@ -40,6 +41,7 @@ def get_valid_date(date_str, is_edit_mode=False):
     except ValueError:
         raise ValueError("날짜는 YYYY-MM-DD 형식으로 입력해야합니다.")
 
+    # 연도 범위 검사(1차 수정)
     if not (1900 <= y <= 2099):
         raise ValueError("날짜는 YYYY-MM-DD 형식으로 입력해야합니다.")
 
@@ -63,11 +65,12 @@ def get_valid_date_or_month(date_input):
 def get_valid_amount(amount_str):
     """금액 유효성 검사 및 정수 반환 (5.2.3.1 ~ 5.2.3.4절)"""
     
+    # 공백 검사(1차 수정)
     if not amount_str or amount_str.isspace() or amount_str.strip() != amount_str:
         raise ValueError("금액은 정수로 입력해야 합니다.")
     
     amount_str = amount_str.strip()
-    
+
     try:
         amount = int(amount_str)
     except ValueError:
@@ -79,6 +82,7 @@ def get_valid_amount(amount_str):
     if amount_str != str(amount) :
         raise ValueError("금액은 정수로 입력해야 합니다.")
         
+    # 9자리 검사(1차 수정)
     if amount > 999999999 or len(amount_str) > 9: 
         raise ValueError("금액은 999,999,999 이하의 값만 허용됩니다.")
         
@@ -88,6 +92,7 @@ def get_valid_amount(amount_str):
 def get_valid_category(category_input):
     """카테고리 유효성 검사 및 표준명 반환 (5.2.4.1 ~ 5.2.4.4절)"""
     
+    # 공백 검사(1차 수정)
     if not category_input or category_input.isspace():
         raise ValueError("올바른 카테고리를 입력해야 합니다.")
 
@@ -96,16 +101,11 @@ def get_valid_category(category_input):
         
     if ' ' in category_input:
         raise ValueError("올바른 카테고리를 입력해야 합니다.")
-
-    #if type_str == 'I'
-    #    return '입금'
         
     input_stripped = category_input.strip()
     input_lower = input_stripped.lower()
     
     for standard_name, synonyms in CATEGORY_MAP.items():
-        #if standard_name == '입금': continue
-        
         if standard_name.lower() == input_lower or input_lower in [s.lower() for s in synonyms]:
             return standard_name
             
@@ -115,6 +115,7 @@ def get_valid_category(category_input):
 def get_valid_payment(payment_input):
     """결제수단 유효성 검사 및 표준명 반환 (5.2.5.1 ~ 5.2.5.4절)"""
     
+    # 공백 검사(1차 수정)
     if not payment_input or payment_input.isspace():
         raise ValueError("올바른 결제수단을 입력해야 합니다.")
 
@@ -139,10 +140,8 @@ def get_valid_payment(payment_input):
 
 
 def load_user_ledger(user_id):
-    """
-    사용자의 가계부 파일(<ID>_HL.txt)을 읽어 리스트로 반환 (6.2절)
-    실제 파일 I/O 및 6.3절 문법 검사 로직이 필요함.
-    """
+    """사용자의 가계부 파일(<ID>_HL.txt)을 읽어 리스트로 반환 (6.2절)"""
+    
     file_path = f"{user_id}_HL.txt"
     data = []
     
@@ -176,7 +175,6 @@ def load_user_ledger(user_id):
                     '결제수단': parts[4],
                 })
         
-        # 7.8절에 따라 날짜 역순으로 정렬 (가정)
         return sorted(data, key=lambda x: x['날짜'], reverse=True)
         
     except Exception as e:
@@ -198,9 +196,8 @@ def calculate_total_asset(data_list):
 
 
 def save_ledger_data(user_id, data_list):
-    """
-    변경된 가계부 내역을 파일에 저장하고 무결성 검사 (7.10, 6.3절)
-    """
+    """변경된 가계부 내역을 파일에 저장하고 무결성 검사 (7.10, 6.3절)"""
+    
     file_path = f"{user_id}_HL.txt"
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
@@ -208,9 +205,6 @@ def save_ledger_data(user_id, data_list):
                 # 6.2.1절 형식: <Date><탭문자><Type><탭문자><Amount><탭문자><Category><탭문자><Payment>
                 line = f"{item['날짜']}\t{item['유형']}\t{item['금액']}\t{item['카테고리']}\t{item['결제수단']}\n"
                 f.write(line)
-        
-        # (6.3절 파일 검사는 load_user_ledger를 호출하여 수행 가능하나, 중복을 막기 위해 생략)
-        # 이 시점에서 저장된 파일이 문법적으로 올바른지 다시 load_user_ledger를 통해 확인해야 함.
         return True
         
     except Exception as e:
@@ -269,6 +263,7 @@ def _filter_ledger_data(data_list, search_term):
 
 def _display_ledger_table(data_list, user_id, mode="query", total_asset_data_list=None):
     """조회 결과를 UI/UX에 맞게 표 형태로 출력 (7.8절)"""
+    
     if mode=="query":
         print("번호|     날짜      | 지출    | 수입     | 카테고리| 결제수단")
         print("--------------------------------------------------------------")
@@ -276,13 +271,11 @@ def _display_ledger_table(data_list, user_id, mode="query", total_asset_data_lis
     asset_list_to_use = total_asset_data_list if total_asset_data_list is not None else data_list
    
     display_to_original_idx_map = []
-    #idxList = []
     cnt = 1
     
     for item in data_list:
         expense = f"{item['금액']:,}" if item['유형'] == 'E' else '-'
         income = f"{item['금액']:,}" if item['유형'] == 'I' else '-'
-        #idxList.append(item['idx'])
         display_to_original_idx_map.append(item['idx'])
         if mode=="query":
             print(f" {cnt:<3}| {item['날짜']:<13} |{expense:>8} | {income:>8} | {item['카테고리']:<6}| {item['결제수단']:<6}")
@@ -304,10 +297,6 @@ def handle_query_and_display(user_id, mode = "query"):
     original_data_list = load_user_ledger(user_id) 
     
     if mode == "query":
-
-        # print("메뉴를 입력하세요: 조회")
-        # print("--------------------------------------------------------------")
-
         pass
     while True:
         print("\n[ 전체조회 ]   [ 검색조회 ]")
@@ -387,9 +376,7 @@ def handle_edit(user_id):
             if not edit_idx_input.isdigit():
                 print("입력이 올바르지 않습니다.")
                 continue
-            
-            #idxLsit[linput]
-            #edit_idx = int(edit_idx_input)
+        
             display_num = int(edit_idx_input) 
             map_index = display_num - 1
 
@@ -425,6 +412,7 @@ def handle_edit(user_id):
 # 💡 [편집 수정 함수] process_update
 def process_update(user_id, target_item):
     """선택된 내역을 수정하고 저장 처리 (7.9절)"""
+    
     original_data_list = load_user_ledger(user_id) # 원본 데이터 로드
     
     # target_item의 참조를 원본 리스트에서 업데이트
@@ -435,7 +423,7 @@ def process_update(user_id, target_item):
     
     # 날짜 입력 및 유효성 검사
     while True:
-        new_date = input("날짜 입력(YYYY-MM-DD): ") #strip 제거하여 공백 검사
+        new_date = input("날짜 입력(YYYY-MM-DD): ") #strip 제거하여 공백 검사(1차 수정)
 
         if not new_date:
             break
@@ -451,7 +439,7 @@ def process_update(user_id, target_item):
     print("카테고리")
     print("      [식비] [교통] [주거] [여가] [기타] [입금]")
     while True:
-        new_category = input("카테고리 입력: ")
+        new_category = input("카테고리 입력: ") #strip 제거하여 공백 검사(1차 수정)
 
         if not new_category:
             break
@@ -471,7 +459,7 @@ def process_update(user_id, target_item):
     print("--------------------------------------------------------------")
     # 금액 입력 및 유효성 검사
     while True:
-        new_amount = input("금액 입력: ")
+        new_amount = input("금액 입력: ") #strip 제거하여 공백 검사(1차 수정)
 
         if not new_amount:
             break
@@ -486,7 +474,7 @@ def process_update(user_id, target_item):
     print("결제수단")
     print("      [카드] [현금] [계좌이체]")
     while True:
-        new_payment = input("결제수단 입력: ")
+        new_payment = input("결제수단 입력: ") #strip 제거하여 공백 검사(1차 수정)
 
         if not new_payment:
             break
