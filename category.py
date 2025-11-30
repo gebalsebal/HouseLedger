@@ -115,17 +115,41 @@ def save_user_settings(user_id, map_data):
     변경된 카테고리 맵을 파일에 저장. (예산 데이터와 함께 저장해야 함)
     """
     settings_file_path = HOME_DIR / f"{user_id}{SETTING_FILE_SUFFIX}"
+
+    budget_lines = []
+    try:
+        if settings_file_path.exists():
+            with open(settings_file_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            # 카테고리 섹션과 예산 섹션을 구분하는 빈 줄('\n')을 찾아 그 이후를 예산으로 추출
+            found_separator = False
+            for line in lines:
+                if found_separator:
+                    # 빈 줄 이후의 모든 줄은 예산 데이터.
+                    budget_lines.append(line.rstrip('\n'))
+                elif line.strip() == '':
+                    # 첫 번째 빈 줄 발견 시, 다음 줄부터 예산 섹션으로 간주.
+                    found_separator = True
+                    
+    except Exception as e:
+        print(f"!치명적오류: 기존 설정 파일({settings_file_path}) 읽기 중 오류 발생: {e}")
+        return False
+        
     category_lines = []
-    
     # 1. 카테고리 섹션 내용 생성
     for standard_name, data in map_data.items():
         separator = data['separator']
-        synonyms_str = '\t'.join(data['synonyms'])
-        line = f"{separator}\t{standard_name}\t{synonyms_str}"
+        synonyms_str = '\t'.join([s for s in data.get('synonyms', []) if s.strip()])
+        # 형식: <Category구분자>\t<Category표준명>[\t<Category동의어>]
+        line = f"{separator}\t{standard_name}"
+        if synonyms_str:
+            line += f"\t{synonyms_str}"
         category_lines.append(line)
 
-    # 2. 파일 저장: 카테고리 섹션과 예산 섹션을 빈 줄로 구분
+    # 2. 카테고리 섹션과 예산 섹션을 빈 줄로 구분
     content = '\n'.join(category_lines) + '\n\n'
+    # 3. 기존 예산 섹션 추가
+    content += '\n'.join([line for line in budget_lines if line.strip()])
 
     try:
         with open(settings_file_path, 'w', encoding='utf-8') as f:
