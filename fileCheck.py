@@ -142,7 +142,7 @@ def check_ledgerfile(ledgers):
             return line_num
 
         # 5. Category 검사 (외부 함수)
-        #### 카테고리 검사 미구현 상태여서 주석 처리 
+        #### 카테고리 미구현 상태여서 주석 처리 
         # if not check_valid_category(category_str):
         #     return line_num
 
