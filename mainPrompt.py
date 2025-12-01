@@ -374,7 +374,7 @@ def budget_menu():
             # 예산 날짜 존재여부 확인
             if not check_file_date(date_str):
                 expense = calculate_budget(date_str)
-                if not expense : break
+                if expense is False: break
                 elif int(amount_str) - expense < 0:
                     print("예산은 총 지출액보다 큰 금액으로만 설정할 수 있습니다.")
                     print(f"당월의 총 지출액: ₩{expense}")
@@ -401,7 +401,7 @@ def budget_menu():
                     else: print("해당 월의 예산이 존재하지 않습니다. 다시 입력해주세요")
             
             expense = calculate_budget(date_str)
-            if not expense : break
+            if expense is False: break
             elif int(amount_str) - expense < 0:
                 print("예산은 총 지출액보다 큰 금액으로만 설정할 수 있습니다.")
                 print(f"당월의 총 지출액: ₩{expense}")

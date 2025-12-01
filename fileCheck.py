@@ -164,18 +164,20 @@ def check_ledgerfile(ledgers):
 
 # 🥠2차: check_setting_file 함수 구현 (설정 파일 문법/의미 규칙 검사)
 def check_setting_file(settings_lines):
-    
-    category_set = set() # 표준명과 동의어 중복 검사
+    category_set = set()      # 표준명과 동의어 중복 검사
+    budget_date_set = set()   # 예산 날짜 중복 검사 (추가됨)
     is_category_section = True 
-    found_separator = False 
     
+    # 날짜 검증용 정규식 컴파일 (YYYY-MM)
+    # 연도: 19xx 또는 20xx, 월: 01~12
+    date_regex = re.compile(r'^(19[0-9]{2}|20[0-9]{2})-(0[1-9]|1[0-2])$')
+
     for i, line in enumerate(settings_lines, 1):
         line = line.strip()
         
         if not line:
             if is_category_section:
                 is_category_section = False # 첫 번째 빈 줄 발견 (섹션 구분 시작)
-                found_separator = True
             continue
         
         if is_category_section:
@@ -186,6 +188,7 @@ def check_setting_file(settings_lines):
             
             separator = parts[0]
             standard_name = parts[1].strip()
+            # 동의어가 있는 경우만 리스트 생성, 빈 문자열 제외
             synonyms = [p.strip() for p in parts[2:] if p.strip()] 
 
             # 2. 구분자 위치 및 형식 검사
@@ -202,9 +205,33 @@ def check_setting_file(settings_lines):
             for s in synonyms:
                 category_set.add(s)
 
-         #elif found_separator:
-            # 4. 예산 섹션 검사 
+        elif not is_category_section:
+            # 예산 섹션 구현
+            parts = line.split('\t')
             
+            # 1. 예산 형식 검사: <예산 날짜><탭><예산 금액>
+            # 탭으로 구분된 요소가 최소 2개(날짜, 금액) 있어야 함
+            if len(parts) < 2:
+                return i
+            
+            date_str = parts[0].strip()
+            amount_str = parts[1].strip()
+            
+            # 2. 날짜 문법 규칙 검사 (5.4.1절)
+            # 정규식을 이용해 YYYY-MM 형식 및 범위 검사
+            if not date_regex.match(date_str):
+                return i
+            
+            # 3. 예산 날짜 중복 검사 (6.3.2절 의미 규칙)
+            if date_str in budget_date_set:
+                return i
+            budget_date_set.add(date_str)
+            
+            # 4. 예산 금액 형식 검사
+            # 5.2.3.1절 문법형식과 동일 (양의 정수 숫자)
+            if not amount_str.isdigit():
+                return i
+                
     return None
 
 
@@ -321,12 +348,12 @@ def verify_files():
         
         try:
             with open(setting_file_path, 'r', encoding='utf-8') as f:
-                settings_lines = f.readlines()
+                setting = f.readlines()
         except Exception as e:
             print(f"!치명적오류: {setting_file_name} 파일을 읽는 중 오류가 발생했습니다: {e}")
             print("프로그램을 종료시킵니다.")
             sys.exit()
-        lineNum = check_setting_file(settings_lines)
+        lineNum = check_setting_file(setting)
         if lineNum is not None:
             # 치명적 오류 메시지 출력 후 종료
             print(f"!치명적오류: 현재 {setting_file_name} {lineNum}행에서 오류가 발생되었습니다.")
