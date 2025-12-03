@@ -3,7 +3,7 @@ import os
 import datetime
 import re
 from pathlib import Path
-from category import convert_codes_to_names, convert_names_to_codes, PAYMENT_MAP, USER_CATEGORY_MAP
+
 # --------------------------------------------------------------
 # 1. 전역 상수/변수 및 헬퍼 함수 (Validation Logic)
 # --------------------------------------------------------------
@@ -228,72 +228,68 @@ def _get_standard_name(input_str, item_map):
     return None
 
 def _filter_ledger_data(data_list, search_term):
-    """검색 조건(날짜/카테고리/결제수단)에 따라 데이터를 필터링 (7.2.4)"""
+    """검색 조건(날짜/카테고리/결제수단)에 따라 데이터를 필터링"""
     filtered_data = []
-
-    # 1. 날짜/연월 검색
+    
+    # 1. 날짜/연월 검색 판단
     if search_term and search_term[0].isdigit():
         try:
-            get_valid_date_or_month(search_term)  # 형식 검사
+            get_valid_date_or_month(search_term) # 형식만 검사 (5.3.1절)
             for item in data_list:
                 if item['날짜'].startswith(search_term):
                     filtered_data.append(item)
             return filtered_data
         except ValueError as e:
-            print(f"오류 메시지: {e}")
-            return -2
+                print(f"오류 메시지: {e}")
+                return -2
 
-    # 2. 카테고리 검색 (표준명/동의어 → 코드 변환)
-    codes = convert_names_to_codes([search_term])
-    if codes:
-        for item in data_list:
-            if item['카테고리'] in codes:
+    # 2. 카테고리 검색 판단 (표준명 또는 동의어 사용)
+    standard_category = _get_standard_name(search_term, CATEGORY_MAP)
+    if standard_category:
+        for item in data_list: 
+            if item['카테고리'] == standard_category:
                 filtered_data.append(item)
         return filtered_data
-
-    # 3. 결제수단 검색 (표준명/동의어 → 코드 변환)
-    codes = convert_names_to_codes([search_term])
-    if codes:
+    
+    # 3. 결제수단 검색 판단 (표준명 또는 동의어 사용)
+    standard_payment = _get_standard_name(search_term, PAYMENT_MAP)
+    if standard_payment:
         for item in data_list:
-            if item['결제수단'] in codes:
+            if item['결제수단'] == standard_payment:
                 filtered_data.append(item)
         return filtered_data
 
     return -1
 
 def _display_ledger_table(data_list, user_id, mode="query", total_asset_data_list=None):
-    """조회 결과를 표 형태로 출력 (7.2.4)"""
-
-    if mode == "query":
+    """조회 결과를 UI/UX에 맞게 표 형태로 출력 (7.8절)"""
+    
+    if mode=="query":
         print("번호|     날짜      | 지출    | 수입     | 카테고리| 결제수단")
         print("--------------------------------------------------------------")
-
+    
     asset_list_to_use = total_asset_data_list if total_asset_data_list is not None else data_list
+   
     display_to_original_idx_map = []
     cnt = 1
-
+    
     for item in data_list:
         expense = f"{item['금액']:,}" if item['유형'] == 'E' else '-'
         income = f"{item['금액']:,}" if item['유형'] == 'I' else '-'
         display_to_original_idx_map.append(item['idx'])
-
-        # 카테고리/결제수단을 코드 → 표준명으로 변환
-        category_name = convert_codes_to_names([item['카테고리']])[0] if item['카테고리'] else "-"
-        payment_name = convert_codes_to_names([item['결제수단']])[0] if item['결제수단'] else "-"
-
-        if mode == "query":
-            print(f" {cnt:<3}| {item['날짜']:<13} |{expense:>8} | {income:>8} | {category_name:<6}| {payment_name:<6}")
+        if mode=="query":
+            print(f" {cnt:<3}| {item['날짜']:<13} |{expense:>8} | {income:>8} | {item['카테고리']:<6}| {item['결제수단']:<6}")
         cnt += 1
-
-    if mode == "query":
+    
+    if mode=="query":
         print("--------------------------------------------------------------")
-
+    
     total_asset = calculate_total_asset(asset_list_to_use)
-    if mode == "query":
-        print(f"현재 {user_id}님의 총 자산은 ₩{total_asset:,}입니다.")
-        print("--------------------------------------------------------------")
-
-    return display_to_original_idx_map
+    if mode=="query":
+        print(f"현재 ID님의 총 자산은 ₩{total_asset:,}입니다.")
+        print("-------------------------------------------------------------")
+    
+    return display_to_original_idx_map  
 
 # 💡 [조회 함수] handle_query_and_display
 def handle_query_and_display(user_id, mode = "query"):
@@ -412,19 +408,24 @@ def handle_edit(user_id):
             
 # 💡 [편집 수정 함수] process_update
 def process_update(user_id, target_item):
-    """선택된 내역을 수정하고 저장 처리 (7.2.4)"""
-
-    original_data_list = load_user_ledger(user_id)
+    """선택된 내역을 수정하고 저장 처리 (7.9절)"""
+    
+    original_data_list = load_user_ledger(user_id) # 원본 데이터 로드
+    
+    # target_item의 참조를 원본 리스트에서 업데이트
+    # (load_user_ledger가 복사본을 주므로, 실제 변경할 항목을 원본에서 찾아야 함)
     current_item = next(item for item in original_data_list if item['idx'] == target_item['idx'])
-
+    
     origin_sum = calculate_total_asset(original_data_list)
-    old_type, old_category, old_amount = current_item['유형'], current_item['카테고리'], current_item['금액']
-
+    old_type = current_item['유형']
+    old_category = current_item['카테고리']
+    old_amount = current_item['금액']
     print("===================================")
-
-    # 날짜 입력
+    
+    # 날짜 입력 및 유효성 검사
     while True:
-        new_date = input("날짜 입력(YYYY-MM-DD): ").strip()
+        new_date = input("날짜 입력(YYYY-MM-DD): ") #strip 제거하여 공백 검사(1차 수정)
+
         if not new_date:
             break
         try:
@@ -432,42 +433,52 @@ def process_update(user_id, target_item):
             break
         except ValueError as e:
             print(f"오류 메시지: {e}")
+            
 
     print("--------------------------------------------------------------")
-    # 카테고리 입력
+    # 카테고리 입력 및 유효성 검사
     print("카테고리")
     print("      [식비] [교통] [주거] [여가] [기타] [입금]")
     while True:
-        new_category = input("카테고리 입력: ").strip()
+        new_category = input("카테고리 입력: ") #strip 제거하여 공백 검사(1차 수정)
+
         if not new_category:
             break
         try:
-            codes = convert_names_to_codes([new_category])
-            if not codes:
-                raise ValueError("잘못된 카테고리 입력")
+            standard_category = get_valid_category(new_category) # 💡 [수정] type_str 인자 제거
+            
+            # 💡 [수정] 카테고리에 따라 유형(Type)을 자동으로 업데이트
+            if standard_category == '입금':
+                current_item['유형'] = 'I'
+            else:
+                current_item['유형'] = 'E'
+            current_item['카테고리'] = standard_category
 
-            standard_category = convert_codes_to_names(codes)[0]
-            current_item['카테고리'] = codes[0]
-            current_item['유형'] = 'I' if standard_category == '입금' else 'E'
-
-            if calculate_total_asset(original_data_list) < 0:
+            #지출이 수입보다 큰 경우 처리
+            sum = calculate_total_asset(original_data_list)
+            if sum < 0:
                 print("현재 지출이 수입보다 커집니다.")
                 print(f"현재 {user_id}님의 총 자산은 ₩{origin_sum}입니다")
-                current_item['유형'], current_item['카테고리'] = old_type, old_category
+                current_item['유형'] = old_type
+                current_item['카테고리'] = old_category
                 continue
             break
         except ValueError as e:
             print(f"오류 메시지: {e}")
 
     print("--------------------------------------------------------------")
-    # 금액 입력
+    # 금액 입력 및 유효성 검사
     while True:
-        new_amount = input("금액 입력: ").strip()
+        new_amount = input("금액 입력: ") #strip 제거하여 공백 검사(1차 수정)
+
         if not new_amount:
             break
         try:
             current_item['금액'] = get_valid_amount(new_amount)
-            if calculate_total_asset(original_data_list) < 0:
+
+            #지출이 수입보다 큰 경우 처리
+            sum = calculate_total_asset(original_data_list)
+            if sum < 0:
                 print("현재 지출이 수입보다 커집니다.")
                 print(f"현재 {user_id}님의 총 자산은 ₩{origin_sum}입니다")
                 current_item['금액'] = old_amount
@@ -477,34 +488,34 @@ def process_update(user_id, target_item):
             print(f"오류 메시지: {e}")
 
     print("--------------------------------------------------------------")
-    # 결제수단 입력
+    # 결제수단 입력 및 유효성 검사
     print("결제수단")
     print("      [카드] [현금] [계좌이체]")
     while True:
-        new_payment = input("결제수단 입력: ").strip()
+        new_payment = input("결제수단 입력: ") #strip 제거하여 공백 검사(1차 수정)
+
         if not new_payment:
             break
         try:
-            codes = convert_names_to_codes([new_payment])
-            if not codes:
-                raise ValueError("잘못된 결제수단 입력")
-            current_item['결제수단'] = codes[0]
+            current_item['결제수단'] = get_valid_payment(new_payment)
             break
         except ValueError as e:
             print(f"오류 메시지: {e}")
-
-    # 수정된 내용 출력
+    
+    # 7.9절: 수정된 내용 출력
     print("===================================")
-    print(f"{'날짜':<11} {'지출':<8} {'수입':<8} {'카테고리':<6} {'결제수단'}")
+    print(f"{'날짜':<11}   {'지출':<8}  {'수입':<8}  {'카테고리':<6}  {'결제수단'}")
     print(_format_item_for_display(current_item))
     print("===================================")
 
+    # 저장 확인 및 최종 처리
     confirm = input("이대로 저장하시겠습니까?(Y/N): ").strip().upper()
     if confirm == 'Y':
         save_ledger_data(user_id, original_data_list)
         total_asset = calculate_total_asset(original_data_list)
+        
         print("\n편집이 완료되었습니다.")
-        print(f"현재 {user_id}님의 총 자산은 ₩{total_asset:,}입니다.")
+        print(f"현재 ID님의 총 자산은 ₩{total_asset:,}입니다.")
         print("--------------------------------------------------------------")
         return True
     else:

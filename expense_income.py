@@ -3,8 +3,6 @@ import os
 import datetime
 import re
 from pathlib import Path
-from category import get_category_map, convert_names_to_codes, convert_codes_to_names
-
 
 # 홈 경로 설정
 HOME_DIR = Path.cwd()
@@ -55,31 +53,30 @@ def dinput():
             break
     return date
 
-def cinput() -> list[str]:
-    """
-    사용자 입력을 받아 표준화된 카테고리명 리스트 반환
-    """
-    print("카테고리 목록")
-    print(" [식비][교통][주거][여가][입금][기타]\n")
-
-    while True:
-        category = input("카테고리를 입력하세요 (여러 개는 ,로 구분): ")
-        # 입력값을 ',' 기준으로 분리
-        raw_list = [c.strip() for c in category.split(',') if c.strip()]
-
-        # 내부 코드 변환
-        codes = convert_names_to_codes(raw_list)
-
-        if not codes:
+def cinput():
+    print("카테고리")
+    print(" [식비][교통][주거][여가][기타]\n")
+    while 1:
+        category=input('카테고리 입력: ')
+        if(category in cat1):
+            category='식비'
+            break
+        elif(category in cat2):
+            category='교통'
+            break
+        elif(category in cat3):
+            category='주거'
+            break
+        elif(category in cat4):
+            category='주거'
+            break
+        elif(category in cat6):
+            category='기타'
+            break
+        else:
             print("올바른 카테고리를 입력해야 합니다.")
-            continue
-
-        # 코드 → 표준명 변환
-        names = convert_codes_to_names(codes)
-
-        print("선택된 카테고리:", names)
-        print(SEPERATOR1)
-        return names
+    print("------------------------------------------------------------")
+    return category
 
 def ainput():
     while 1:
@@ -199,5 +196,4 @@ def income(user_id):
     print(date+"     -     "+amount+"     "+category+"        "+method)
     hsave(user_id, date, type, amount, category, method)
     
-
 

@@ -158,24 +158,3 @@ def save_user_settings(user_id, map_data):
     except Exception as e:
         print(f"오류: 설정 파일 저장 중 문제 발생: {e}")
         return False
-def convert_names_to_codes(names: list[str]) -> list[str]:
-    """
-    사용자 입력 카테고리명/동의어를 내부 코드 리스트로 변환
-    """
-    codes = []
-    for name in names:
-        for standard, data in USER_CATEGORY_MAP.items():
-            if name == standard or name in data['synonyms']:
-                codes.append(data['separator'])
-    return codes
-
-def convert_codes_to_names(codes: list[str]) -> list[str]:
-    """
-    내부 코드 리스트를 표준 카테고리명 리스트로 변환
-    """
-    names = []
-    for code in codes:
-        for standard, data in USER_CATEGORY_MAP.items():
-            if data['separator'] == code:
-                names.append(standard)
-    return names
