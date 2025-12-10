@@ -8,6 +8,10 @@ from query_edit import handle_edit
 from query_edit import get_valid_amount
 from expense_income import expenditure
 from expense_income import income
+
+import category
+
+
 #주 프롬프트 :
 SEPERATOR = '--------------------------------------------------------------'
 SEPERATOR2 = '=============================================================='
@@ -478,7 +482,9 @@ def callFunc(c, user_id):
     elif(c == '잔고'):
         balance_menu(user_id)
     elif(c == '카테고리'):
-        pass
+        category.load_user_categories(user_id)
+        currentmap=category.get_category_map()
+        category.handle_category(currentmap,user_id)
     elif(c == '예산'):
         budget_menu()
     elif(c == '로그아웃'):
