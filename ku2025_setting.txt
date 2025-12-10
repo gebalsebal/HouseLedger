@@ -1,8 +1,0 @@
-C1	입금	월급	용돈	salary	wage	income	입
-C2	식비	음식	밥	food	식
-C3	교통	차	지하철	transport	transportation	교
-C4	주거	월세	관리비	housing	house	rent	주
-C5	여가	취미	문화생활	hobby	leisure	여
-C6	기타	etc	other	기
-
-2025-11	200000
