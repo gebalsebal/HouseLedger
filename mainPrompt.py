@@ -391,14 +391,17 @@ def budget_menu():
                     print(SEPERATOR)
                     continue
                 # 마지막 저장 여부
-                yn = input("이대로 저장하시겠습니까? (Y/N): ").lower()
-                if yn == 'y' :
-                    append_budget_file(date_str, amount_str)
-                    break
-                elif(yn=='n'):
-                    print("입력을 취소합니다.")
-                    print("주 프롬프트로 돌아갑니다.")
-                    print(SEPERATOR2)
+                while(True):
+                    yn = input("이대로 저장하시겠습니까? (Y/N): ").lower()
+                    if yn == 'y' :
+                        modify_budget_file(date_str, amount_str)
+                    elif(yn=='n'):
+                        print("입력을 취소합니다.")
+                        print("주 프롬프트로 돌아갑니다.")
+                        print(SEPERATOR2)
+                    else:
+                        print("입력이 올바르지 않습니다.")
+                        continue
                     break
             else:
                 print("이미 해당 월의 예산이 존재합니다. [수정]을 이용해주세요.")
@@ -420,13 +423,18 @@ def budget_menu():
                 print(SEPERATOR)
                 continue
             # 마지막 저장 여부
-            yn = input("이대로 저장하시겠습니까? (Y/N): ").lower()
-            if yn == 'y' :
-                modify_budget_file(date_str, amount_str)
-            elif(yn=='n'):
-                print("입력을 취소합니다.")
-                print("주 프롬프트로 돌아갑니다.")
-                print(SEPERATOR2)
+            while(True):
+                yn = input("이대로 저장하시겠습니까? (Y/N): ").lower()
+                if yn == 'y' :
+                    modify_budget_file(date_str, amount_str)
+                elif(yn=='n'):
+                    print("입력을 취소합니다.")
+                    print("주 프롬프트로 돌아갑니다.")
+                    print(SEPERATOR2)
+                else:
+                    print("입력이 올바르지 않습니다.")
+                    continue
+                break
 
         elif command == "삭제":
             if not calculate_budget() : break # 현재 내역 출력
@@ -438,12 +446,18 @@ def budget_menu():
 
             
             # 마지막 저장 여부
-            yn = input("정말 삭제하시겠습니까? (Y/N): ").lower()
-            if yn == 'y' :
-                delete_budget_file(date_str)
-            elif(yn=='n'):
-                print("입력을 취소합니다.")
-                print("주 프롬프트로 돌아갑니다.")
+            while(True):
+                yn = input("이대로 저장하시겠습니까? (Y/N): ").lower()
+                if yn == 'y' :
+                    modify_budget_file(date_str, amount_str)
+                elif(yn=='n'):
+                    print("입력을 취소합니다.")
+                    print("주 프롬프트로 돌아갑니다.")
+                    print(SEPERATOR2)
+                else:
+                    print("입력이 올바르지 않습니다.")
+                    continue
+                break
 
         elif command == "조회":
             calculate_budget()
