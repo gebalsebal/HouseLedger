@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import re
 from query_edit import load_user_ledger, save_ledger_data
 
 HOME_DIR = Path.cwd()
@@ -350,11 +351,29 @@ def delete_category(category_map,user_id):
             #print(category_map[stdcat]["separator"])
             #가계부 파일에서 삭제할 카테고리로 저장된 항목 카테고리 변경
             data=load_user_ledger(user_id)
+
+            target_separator = category_map[stdcat]["separator"]
+            separator_char = " " 
+
             for item in data:
-                #print(item['카테고리'])
-                if(item['카테고리']==category_map[stdcat]["separator"]):
-                    item['카테고리']=""
+                category_string = item['카테고리']
+                if not category_string:
+                    continue
+                current_separators = re.split(separator_char, category_string)
+                updated_separators = [
+                    sep for sep in current_separators 
+                    if sep and sep != target_separator
+                ]
+                item['카테고리'] = separator_char.join(updated_separators)
             save_ledger_data(user_id,data)
+
+
+            #for item in data:
+                #print(item['카테고리'])
+            #    if(item['카테고리']==category_map[stdcat]["separator"]):
+            #        item['카테고리']=""
+            #save_ledger_data(user_id,data)
+            
             #맵에서 카테고리 삭제
             del category_map[stdcat]
             #사용자 설정파일에서 삭제
