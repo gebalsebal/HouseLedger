@@ -84,11 +84,11 @@ def ainput():
     while 1:
         amount=input('금액 입력: ')
         if(not amount.isdecimal()):#문자열이 수로 이루어져 있는지 검사
-            print("금액은 정수로 입력해야 합니다.")
-        elif(amount.startswith('0')):
-            print("금액은 선행 0이 아닌 정수로 입력해야 합니다.")            
+            print("금액은 정수로 입력해야 합니다.")     
         elif(int(amount)<=0):
             print("금액은 양의 정수로 입력해야 합니다.")
+        elif(amount.startswith('0')):
+            print("금액은 정수로 입력해야 합니다.")       
         elif(int(amount)>999999999):
            print("금액은 999,999,999 이하의 값만 허용됩니다.")
         else:
