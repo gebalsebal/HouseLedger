@@ -218,7 +218,11 @@ def _get_standard_name(input_str, item_map):
 def _filter_ledger_data(data_list, search_term):
     filtered_data = []
 
-    # ✅ 날짜/연월 검색
+    # 필요한 데이터는 함수 내부에서 로드
+    category_map = get_category_map()          # 기본 + 사용자 카테고리 포함된 map
+    payment_map = get_payment_map()            # 결제수단 map
+
+    # 1. 날짜/연월 검색
     if search_term and search_term[0].isdigit():
         try:
             get_valid_date_or_month(search_term)
@@ -226,11 +230,10 @@ def _filter_ledger_data(data_list, search_term):
                 if item['날짜'].startswith(search_term):
                     filtered_data.append(item)
             return filtered_data
-        except ValueError as e:
-            print("오류 메시지:", e)
+        except ValueError:
             return -2
 
-    # ✅ 카테고리 검색 (내부 코드 기반)
+    #  2. 카테고리 검색 (표준명/동의어 → 내부코드 변환)
     category_codes = convert_names_to_codes([search_term])
     if category_codes:
         for item in data_list:
@@ -238,15 +241,19 @@ def _filter_ledger_data(data_list, search_term):
                 filtered_data.append(item)
         return filtered_data
 
-    # ✅ 결제수단 검색 (내부 코드 기반)
-    payment_codes = convert_names_to_codes([search_term])
-    if payment_codes:
-        for item in data_list:
-            if any(code in item['결제수단'] for code in payment_codes):
-                filtered_data.append(item)
-        return filtered_data
+    # 3. 결제수단 검색 (표준명/동의어 매칭)
+    search_lower = search_term.lower()
+    for standard, data in payment_map.items():
+        synonyms = [s.lower() for s in data['synonyms']]
+        if search_lower == standard.lower() or search_lower in synonyms:
+            for item in data_list:
+                if standard == item['결제수단']:
+                    filtered_data.append(item)
+            return filtered_data
 
+    # 4. 조건 불일치
     return -1
+    
 def _display_ledger_table(data_list, user_id, mode="query", total_asset_data_list=None):
     if mode == "query":
         print("번호|     날짜      | 지출    | 수입     | 카테고리| 결제수단")
