@@ -79,22 +79,31 @@ def ainput():
 
 
 def minput() -> list[str]:
-    """결제수단 입력 → 내부 코드 변환 → 표준명 반환"""
+    """
+    결제수단 입력 → 내부 코드 변환 → 표준명 리스트 반환
+    """
     payment_map = get_payment_map()
+
     print("결제수단 목록")
     print(" ", list(payment_map.keys()), "\n")
 
     while True:
-        raw = input("결제수단 입력: ").strip()
-        codes = convert_names_to_codes([raw])
+        method = input("결제수단 입력: ").strip()
+        raw_list = [method]  # 단일 입력이지만 리스트 형태로 처리
+
+        # 1) 내부 코드 변환
+        codes = convert_names_to_codes(raw_list)
         if not codes:
             print("올바른 결제수단을 입력해야 합니다.")
             continue
 
+        # 2) 표준명 변환
         names = convert_codes_to_names(codes)
+
         print("선택된 결제수단:", names)
         print(SEPERATOR1)
         return names
+
 
 
 def hsave(user_id, date, type, amount, category_list, method_list):
