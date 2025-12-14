@@ -322,13 +322,17 @@ def update_category(category_map,user_id):
             print("한글, 알파벳 대문자 A~Z, 소문자 a~z, 정수 0~9 이외의 문자는 허용하지 않습니다.")
         elif(search_category(category_map,nstdcat)!=None):
             print("이미 존재하는 표준명 또는 동의어입니다.")
+        elif(nstdcat==''):##################################
+            nstdcat=ostdcat
+            break###################
         else:
             break
     #맵에 수정명으로 수정(새로운 항목 추가 및 기존 항목 삭제)
     category_map[nstdcat]=category_map[ostdcat]
     osynonyms=category_map[ostdcat]["synonyms"]#수정전 카테고리 동의어
     category_map[nstdcat]["synonyms"]=[]#수정후 카테고리 동의어는 일단 빈집합
-    del category_map[ostdcat]
+    if(ostdcat!=nstdcat):##########################
+        del category_map[ostdcat]
     #동의어 입력 및 오류처리
     while 1:
         corlist=input("동의어 입력(공백으로 구분, 기존의 동의어를 삭제하려면 '-' 입력): ")
@@ -370,13 +374,14 @@ def update_category(category_map,user_id):
             save_user_settings(user_id,category_map)
             print("\n'"+nstdcat+"' 카테고리가 성공적으로 수정되었습니다.")
             print("-------------------------")  
+            break###########
         elif(yn=='n'):
             #맵에서 카테고리 원상복구
             category_map[ostdcat]=category_map[nstdcat]
             category_map[ostdcat]["synonyms"]=osynonyms
             del category_map[nstdcat]
             print("\n저장을 취소합니다.")
-        break
+            break###############
 
 def delete_category(category_map,user_id):
     #입금카테고리 표준명
@@ -441,9 +446,10 @@ def delete_category(category_map,user_id):
             save_user_settings(user_id,category_map)
             print("\n삭제가 완료되었습니다.")
             print("-------------------------")  
+            break###########
         elif(yn=='n'):
             print("\n삭제를 취소합니다.")
-        break 
+            break###############
     
 def handle_category(category_map,user_id):
     print("[추가] [수정] [삭제]")
@@ -458,4 +464,6 @@ def handle_category(category_map,user_id):
             delete_category(category_map,user_id)
         else:
             print("카테고리는 입금 카테고리를 포함하여 최소 2개 이상 있어야 합니다.")
+    else:##################
+        print("입력이 올바르지 않습니다.")
 
