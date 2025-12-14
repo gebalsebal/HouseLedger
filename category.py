@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import re
-from query_edit import load_user_ledger, save_ledger_data
+
 
 HOME_DIR = Path.cwd()
 SETTING_FILE_SUFFIX = "_setting.txt"
@@ -356,6 +356,8 @@ def update_category(category_map,user_id):
 
 def delete_category(category_map,user_id):
     #입금카테고리 표준명
+    from query_edit import load_user_ledger, save_ledger_data
+    
     for key,value in category_map.items():
         if value['separator']=='C1':
             income=key
