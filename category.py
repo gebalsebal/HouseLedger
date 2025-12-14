@@ -32,37 +32,29 @@ PAYMENT_MAP = {
 def convert_names_to_codes(names: list[str]) -> list[str]:
     codes = []
     category_map = get_category_map()
-    payment_map = get_payment_map()
 
     for name in names:
         name_lower = name.strip().lower()
-        # 카테고리 변환
+
         for standard, data in category_map.items():
             if standard.lower() == name_lower or name_lower in [s.lower() for s in data['synonyms']]:
                 codes.append(data['separator'])
                 break
-        # 결제수단 변환
-        for standard, data in payment_map.items():
-            if standard.lower() == name_lower or name_lower in [s.lower() for s in data['synonyms']]:
-                codes.append(data['separator'])
-                break
+
     return codes
 
 def convert_codes_to_names(codes: list[str]) -> list[str]:
     names = []
     category_map = get_category_map()
-    payment_map = get_payment_map()
 
     for code in codes:
         for standard, data in category_map.items():
             if data['separator'] == code:
                 names.append(standard)
                 break
-        for standard, data in payment_map.items():
-            if data['separator'] == code:
-                names.append(standard)
-                break
+
     return names
+
 
 def create_default_settings(user_id):
     """
