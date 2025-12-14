@@ -40,25 +40,33 @@ def dinput():
         if valid_date(date):
             return date
 
-
-def cinput() -> list[str]:
-    """다중 카테고리 입력 → 내부 코드 변환 → 표준명 반환"""
+def cinput():
+    """
+    사용자에게 카테고리를 입력받아 표준화된 카테고리명 리스트를 반환한다.
+    """
     category_map = get_category_map()
-    print("카테고리 목록")
-    print(" ", list(category_map.keys()), "\n")
+
+    # 1. 사용자 정의 카테고리 목록 출력
+    print("\n=== 사용 가능한 카테고리 목록 ===")
+    for std, info in category_map.items():
+        syns = ", ".join(info['synonyms'])
+        print(f"- {std} (동의어: {syns})")
 
     while True:
-        raw = input("카테고리를 입력하세요 (여러 개는 ,로 구분): ")
-        raw_list = [c.strip() for c in raw.split(',') if c.strip()]
+        # 2. 사용자 입력
+        category = input("\n카테고리를 입력하세요 (여러 개는 ,로 구분): ").strip()
 
-        codes = convert_names_to_codes(raw_list)
-        if not codes:
-            print("올바른 카테고리를 입력해야 합니다.")
+        # 3. split
+        name_list = [c.strip() for c in category.split(',')]
+
+        # 4. 이름 → 내부 코드 변환
+        codes = convert_names_to_codes(name_list)
+        if codes is None:
+            print("❌ 카테고리 입력이 잘못되었습니다. 다시 입력해주세요.")
             continue
 
+        # 5. 내부 코드 → 표준명 변환
         names = convert_codes_to_names(codes)
-        print("선택된 카테고리:", names)
-        print(SEPERATOR1)
         return names
 
 
@@ -78,37 +86,63 @@ def ainput():
             return amount
 
 
-def minput() -> list[str]:
+# expense_income.py
+
+from category import (
+    get_payment_map,
+    convert_names_to_codes,
+    convert_codes_to_names
+)
+
+def minput():
     """
-    결제수단 입력 → 내부 코드 변환 → 표준명 리스트 반환
+    사용자에게 결제수단을 입력받아 '표준명' 하나를 리스트로 감싸서 반환.
+    예: ['현금'], ['카드']
     """
     payment_map = get_payment_map()
 
-    print("결제수단 목록")
-    print(" ", list(payment_map.keys()), "\n")
+    print("\n=== 사용 가능한 결제수단 목록 ===")
+    for std, info in payment_map.items():
+        syns = ", ".join(info['synonyms'])
+        print(f"- {std} (동의어: {syns})")
 
     while True:
-        method = input("결제수단 입력: ").strip()
-        raw_list = [method]  # 단일 입력이지만 리스트 형태로 처리
+        method = input("\n결제수단을 입력하세요: ").strip()
 
-        # 1) 내부 코드 변환
-        codes = convert_names_to_codes(raw_list)
-        if not codes:
-            print("올바른 결제수단을 입력해야 합니다.")
+        found = None
+        # 표준명 매칭
+        for std, info in payment_map.items():
+            if method == std or method in info['synonyms']:
+                found = std
+                break
+
+        if found is None:
+            print("❌ 결제수단 입력이 잘못되었습니다. 다시 입력해주세요.")
             continue
 
-        # 2) 표준명 변환
-        names = convert_codes_to_names(codes)
+        # 표준명 리스트로 반환 (hsave에서 join해서 쓰기 위해)
+        return [found]
+    
 
-        print("선택된 결제수단:", names)
-        print(SEPERATOR1)
-        return names
-
-
-
+#얘가 카테고리를 코드로 변환해서 저장해야되는데ㅠㅠ
 def hsave(user_id, date, type, amount, category_list, method_list):
-    """파일 저장 + 자산 계산"""
-    category_str = ",".join(category_list)
+    from category import convert_names_to_codes
+
+    # ✅ category_list가 문자열로 들어오는 경우 방지
+    if isinstance(category_list, str):
+        category_list = [category_list]
+
+    # ✅ 코드 변환
+    category_codes = convert_names_to_codes(category_list)
+    print("[디버그] hsave category_list:", category_list)
+    print("[디버그] hsave category_codes:", category_codes)
+
+    # ✅ 변환 실패 → 저장 중단
+    if not category_codes:
+        print("카테고리 코드 변환 실패. 저장할 수 없습니다.")
+        return False
+
+    category_str = " ".join(category_codes)
     method_str = ",".join(method_list)
 
     while True:
@@ -125,10 +159,9 @@ def hsave(user_id, date, type, amount, category_list, method_list):
                     lines = [line for line in f.readlines() if line.strip()]
                     f.seek(0, 2)
 
-                    # 기존 자산 계산
                     total = 0
                     for line in lines:
-                        parts = line.split()
+                        parts = line.split('\t')
                         if parts[1] == 'E':
                             total -= int(parts[2])
                         else:
@@ -136,7 +169,6 @@ def hsave(user_id, date, type, amount, category_list, method_list):
 
                     origin_total = total
 
-                    # 새 금액 반영
                     if type == 'I':
                         total += int(amount)
                     else:
@@ -149,6 +181,7 @@ def hsave(user_id, date, type, amount, category_list, method_list):
                         print(SEPERATOR1)
                         return False
 
+                    # ✅ 코드로 저장
                     f.write(f"{date}\t{type}\t{amount}\t{category_str}\t{method_str}\n")
 
             except Exception as e:
@@ -164,7 +197,6 @@ def hsave(user_id, date, type, amount, category_list, method_list):
             print("입력을 취소합니다.")
             print(SEPERATOR2)
             return True
-
 
 def expenditure(user_id):
     type = 'E'
