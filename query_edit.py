@@ -316,22 +316,37 @@ def handle_query_and_display(user_id, mode = "query"):
             print("   결제수단")
             print("           [카드] [현금] [계좌이체]")
             
-            search_term = input("\n검색 조건 입력: ").strip()
-            print("--------------------------------------------------------------")
+            while True:
+                raw_input = input("\n검색 조건 입력: ")
             
-            filtered_data = _filter_ledger_data(original_data_list, search_term)
-          
-            if filtered_data == -1 or filtered_data == -2:
-                if filtered_data == -1:
+                if not raw_input.strip():
                     print("입력이 올바르지 않습니다.")
-                continue
-            elif filtered_data:
-                _display_ledger_table(filtered_data, user_id, mode="query", total_asset_data_list=original_data_list)
-                return filtered_data
-            elif not filtered_data:
-                print("검색 결과가 없습니다.")
-                continue
-                
+                    continue
+                if raw_input != raw_input.strip():
+                    print("입력이 올바르지 않습니다.")
+                    continue
+                if ' ' in raw_input:
+                    print("입력이 올바르지 않습니다.")
+                    continue
+            
+            
+                search_term = raw_input 
+            
+                print("--------------------------------------------------------------")
+            
+                filtered_data = _filter_ledger_data(original_data_list, search_term)
+
+                if filtered_data == -1 or filtered_data == -2:
+                    if filtered_data == -1:
+                        print("입력이 올바르지 않습니다.")
+                    continue
+                elif filtered_data:
+                    _display_ledger_table(filtered_data, user_id, mode="query", total_asset_data_list=original_data_list)
+                    return filtered_data
+                elif not filtered_data:
+                    print("검색 결과가 없습니다.")
+                    continue
+
         else:
             print("입력이 올바르지 않습니다.")
             continue
@@ -411,9 +426,14 @@ def process_update(user_id, target_item):
 
     # ✅ 날짜 수정
     while True:
-        new_date = input("날짜 입력(YYYY-MM-DD): ").strip()
-        if not new_date:
+        raw_input = input("날짜 입력(YYYY-MM-DD): ") 
+        if not raw_input:
             break
+        if not raw_input.strip() or raw_input != raw_input.strip():
+            print("오류: 올바른 날짜를 입력하세요.")
+            continue
+        new_date = raw_input.strip()
+        
         try:
             current_item['날짜'] = get_valid_date(new_date, is_edit_mode=True)
             break
@@ -445,9 +465,14 @@ def process_update(user_id, target_item):
 
     # ✅ 금액 수정
     while True:
-        new_amount = input("금액 입력: ").strip()
-        if not new_amount:
+        raw_input = input("금액 입력: ")
+        if not raw_input:
             break
+        if not raw_input.strip() or raw_input != raw_input.strip():
+            print("오류: 올바른 금액을 입력하세요.")
+            continue
+        new_amount = raw_input.strip()
+        
         try:
             current_item['금액'] = get_valid_amount(new_amount)
             break
