@@ -32,28 +32,60 @@ PAYMENT_MAP = {
 def convert_names_to_codes(names: list[str]) -> list[str]:
     codes = []
     category_map = get_category_map()
+    payment_map = get_payment_map()
 
     for name in names:
         name_lower = name.strip().lower()
+        found = False
 
+        # ✅ 1) 카테고리 검색
         for standard, data in category_map.items():
             if standard.lower() == name_lower or name_lower in [s.lower() for s in data['synonyms']]:
                 codes.append(data['separator'])
+                found = True
                 break
 
+        if found:
+            continue
+
+        # ✅ 2) 결제수단 검색
+        for standard, data in payment_map.items():
+            if standard.lower() == name_lower or name_lower in [s.lower() for s in data['synonyms']]:
+                codes.append(standard)   # 결제수단은 표준명 자체를 코드로 사용
+                found = True
+                break
+
+        if not found:
+            return []
+
     return codes
+
 
 def convert_codes_to_names(codes: list[str]) -> list[str]:
     names = []
     category_map = get_category_map()
+    payment_map = get_payment_map()
 
     for code in codes:
+        found = False
+
+        # ✅ 카테고리 코드인지 확인
         for standard, data in category_map.items():
             if data['separator'] == code:
                 names.append(standard)
+                found = True
                 break
 
+        if found:
+            continue
+
+        # ✅ 결제수단인지 확인
+        if code in payment_map:
+            names.append(code)
+            continue
+
     return names
+
 
 
 def create_default_settings(user_id):
